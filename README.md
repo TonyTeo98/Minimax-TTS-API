@@ -70,18 +70,43 @@ npm install
 
 #### 2. 获取认证信息
 
-1. 访问 https://www.minimax.io/audio 并登录
-2. 打开浏览器开发者工具 (F12) → Console
-3. 执行以下代码获取认证信息：
+**重要提示**：本 API 需要 MiniMax 的认证信息才能正常工作。
+
+##### 方法一：从 localStorage 获取
+
+1. 访问 https://www.minimax.io/audio 并登录你的账号
+2. 打开浏览器开发者工具 (F12) → Console 标签
+3. 在控制台中执行以下代码：
 
 ```javascript
 const userDetail = localStorage.getItem("user_detail");
 const parsed = JSON.parse(userDetail);
-console.log("Token:", parsed.token || "需要从Cookie获取");
+console.log("Token:", parsed.token);
 console.log("op_ticket:", parsed.op_ticket);
+console.log("\n完整认证头:");
+console.log(`Authorization: Bearer ${parsed.token}:${parsed.op_ticket}`);
 ```
 
-4. 或者从Cookie中获取 `HERTZ-SESSION` 的值
+4. 复制输出的 `token` 和 `op_ticket` 值
+
+##### 方法二：从 Cookie 获取 (备选)
+
+1. 在开发者工具中切换到 **Application** 标签（Chrome）或 **存储** 标签（Firefox）
+2. 在左侧 Cookies 中找到 `https://www.minimax.io`
+3. 查找名为 `HERTZ-SESSION` 或类似的 Cookie 值
+
+##### 使用认证信息
+
+获取到 `token` 和 `op_ticket` 后，在所有 API 请求中添加以下 Header：
+
+```
+Authorization: Bearer {你的token}:{你的op_ticket}
+```
+
+**示例**：
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...:abc123xyz456
+```
 
 #### 3. 启动服务
 
@@ -96,15 +121,39 @@ npm start
 
 服务默认运行在 `http://localhost:8000`
 
-## 健康检查
+## 测试服务
 
-访问健康检查端点验证服务是否正常运行：
+### 健康检查
+
+验证服务是否正常运行：
 
 ```bash
 curl http://localhost:8000/ping
 ```
 
-正常返回：`pong`
+正常返回：
+```json
+{"status":"ok","timestamp":1234567890}
+```
+
+### 测试认证
+
+测试你的认证信息是否有效（将 `YOUR_TOKEN` 和 `YOUR_OP_TICKET` 替换为实际值）：
+
+```bash
+curl -X POST http://localhost:8000/api/tts \
+  -H "Authorization: Bearer YOUR_TOKEN:YOUR_OP_TICKET" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "测试", "voice_id": "279479307768027"}' \
+  --output test.mp3
+```
+
+如果成功，会生成 `test.mp3` 文件。
+
+**常见错误**：
+- `Authorization header required` - 未提供认证头
+- `Unexpected server response: 404` - 认证信息无效或已过期
+- `API Error: [xxx]` - MiniMax API 返回的错误
 
 ## API 文档
 
