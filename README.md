@@ -1,0 +1,293 @@
+# MiniMax TTS API
+
+MiniMax 语音合成 (TTS) 免费 API 服务，支持语音合成、音色选择、历史记录、声音克隆等功能。
+
+## 功能特性
+
+- 🎤 **语音合成** - 将文字转换为高质量语音 (speech-2.6-hd)
+- 🎭 **多种音色** - 支持官方音色和用户克隆音色
+- 📜 **历史记录** - 查看、下载、删除历史音频
+- 🧬 **声音克隆** - 上传音频创建专属克隆音色
+- 🔊 **流式输出** - 支持流式音频传输
+- 🔧 **OpenAI兼容** - 兼容 OpenAI TTS API 格式
+
+## 快速开始
+
+### 1. 安装依赖
+
+```bash
+npm install
+```
+
+### 2. 获取认证信息
+
+1. 访问 https://www.minimax.io/audio 并登录
+2. 打开浏览器开发者工具 (F12) → Console
+3. 执行以下代码获取认证信息：
+
+```javascript
+const userDetail = localStorage.getItem("user_detail");
+const parsed = JSON.parse(userDetail);
+console.log("Token:", parsed.token || "需要从Cookie获取");
+console.log("op_ticket:", parsed.op_ticket);
+```
+
+4. 或者从Cookie中获取 `HERTZ-SESSION` 的值
+
+### 3. 启动服务
+
+```bash
+# 开发模式
+npm run dev
+
+# 生产模式
+npm run build
+npm start
+```
+
+服务默认运行在 `http://localhost:8000`
+
+## API 文档
+
+### 认证方式
+
+所有API请求需要在 Header 中携带认证信息：
+
+```
+Authorization: Bearer {token}:{op_ticket}
+```
+
+### TTS 语音合成
+
+#### POST /api/tts
+
+生成语音并返回音频文件。
+
+**请求体：**
+```json
+{
+  "text": "要转换的文字",
+  "voice_id": "279479307768027",
+  "model": "speech-2.6-hd",
+  "speed": 1,
+  "volume": 1,
+  "pitch": 0,
+  "language_boost": "Chinese (Mandarin)",
+  "effects": {
+    "deepen_lighten": 0,
+    "stronger_softer": 0,
+    "nasal_crisp": 0,
+    "spacious_echo": false,
+    "lofi_telephone": false
+  }
+}
+```
+
+**响应：** 返回 `audio/mpeg` 格式的音频数据
+
+#### POST /api/tts/stream
+
+流式生成语音。
+
+#### POST /api/tts/openai
+
+OpenAI 兼容接口。
+
+**请求体：**
+```json
+{
+  "model": "tts-1-hd",
+  "input": "要转换的文字",
+  "voice": "279479307768027",
+  "speed": 1
+}
+```
+
+### 音色管理
+
+#### GET /api/voices
+
+获取所有可用音色列表（官方+克隆）。
+
+#### GET /api/voices/official
+
+获取官方音色列表。
+
+#### GET /api/voices/cloned
+
+获取用户克隆音色列表。
+
+#### GET /api/voices/:id
+
+获取指定音色详情。
+
+### 历史记录
+
+#### GET /api/history
+
+获取历史音频列表。
+
+**查询参数：**
+- `page` - 页码，默认 1
+- `page_size` - 每页数量，默认 20
+
+#### GET /api/history/:id
+
+获取指定音频详情。
+
+#### DELETE /api/history/:id
+
+删除指定音频记录。
+
+#### GET /api/history/:id/download
+
+下载指定音频文件。
+
+### 声音克隆
+
+#### POST /api/clone
+
+创建克隆音色。
+
+**请求体：**
+```json
+{
+  "name": "我的克隆音色",
+  "audio_base64": "base64编码的音频数据",
+  "description": "音色描述（可选）"
+}
+```
+
+或使用音频URL：
+```json
+{
+  "name": "我的克隆音色",
+  "audio_url": "https://example.com/audio.mp3",
+  "description": "音色描述（可选）"
+}
+```
+
+#### GET /api/clone/:id/status
+
+获取克隆任务状态。
+
+#### DELETE /api/clone/:id
+
+删除克隆音色。
+
+#### PUT /api/clone/:id
+
+更新克隆音色名称。
+
+**请求体：**
+```json
+{
+  "name": "新名称"
+}
+```
+
+## 使用示例
+
+### Python
+
+```python
+import requests
+
+url = "http://localhost:8000/api/tts"
+headers = {
+    "Authorization": "Bearer YOUR_TOKEN:YOUR_OP_TICKET",
+    "Content-Type": "application/json"
+}
+data = {
+    "text": "你好，这是一段测试语音。",
+    "voice_id": "279479307768027"
+}
+
+response = requests.post(url, json=data, headers=headers)
+
+with open("output.mp3", "wb") as f:
+    f.write(response.content)
+```
+
+### JavaScript/Node.js
+
+```javascript
+const axios = require('axios');
+const fs = require('fs');
+
+async function generateSpeech() {
+  const response = await axios.post('http://localhost:8000/api/tts', {
+    text: '你好，这是一段测试语音。',
+    voice_id: '279479307768027'
+  }, {
+    headers: {
+      'Authorization': 'Bearer YOUR_TOKEN:YOUR_OP_TICKET'
+    },
+    responseType: 'arraybuffer'
+  });
+
+  fs.writeFileSync('output.mp3', response.data);
+}
+
+generateSpeech();
+```
+
+### cURL
+
+```bash
+curl -X POST http://localhost:8000/api/tts \
+  -H "Authorization: Bearer YOUR_TOKEN:YOUR_OP_TICKET" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "你好，这是一段测试语音。", "voice_id": "279479307768027"}' \
+  --output output.mp3
+```
+
+## 配置
+
+通过环境变量配置：
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| HOST | 监听地址 | 0.0.0.0 |
+| PORT | 监听端口 | 8000 |
+| DEBUG | 调试模式 | false |
+
+## 参数说明
+
+### 语音设置
+
+| 参数 | 说明 | 范围 |
+|------|------|------|
+| speed | 语速 | 0.5 - 2.0 |
+| volume | 音量 | 0.5 - 2.0 |
+| pitch | 音调 | -12 - 12 |
+
+### 音效设置
+
+| 参数 | 说明 |
+|------|------|
+| deepen_lighten | 声音深浅 |
+| stronger_softer | 强弱调节 |
+| nasal_crisp | 鼻音/清脆 |
+| spacious_echo | 空间回声 |
+| lofi_telephone | 电话音效 |
+
+### 语言增强
+
+支持的语言：
+- Chinese (Mandarin)
+- English
+- Japanese
+- Korean
+- 等等...
+
+## 注意事项
+
+1. 本项目仅供学习研究使用，请勿用于商业目的
+2. 请遵守 MiniMax 的服务条款
+3. 认证信息有时效性，过期需要重新获取
+4. 克隆音色功能需要账号有相应权限
+
+## License
+
+MIT
