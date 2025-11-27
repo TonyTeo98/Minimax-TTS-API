@@ -69,6 +69,14 @@ const authMiddleware = (req: express.Request, res: express.Response, next: expre
     return;
   }
   (req as any).auth = core.parseAuth(authorization);
+
+  // 允许用户通过 X-MiniMax-Cookie header 提供完整的浏览器 cookies
+  // 这样可以直接使用浏览器抓包得到的 cookies（包括 Cloudflare cookies）
+  const customCookie = req.headers['x-minimax-cookie'] as string;
+  if (customCookie) {
+    (req as any).fullCookie = customCookie;
+  }
+
   next();
 };
 
@@ -85,6 +93,7 @@ app.post('/api/tts', authMiddleware, async (req, res) => {
   }
 
   try {
+    const fullCookie = (req as any).fullCookie;
     const result = await ttsController.createSpeech({
       text: body.text,
       voiceId: body.voice_id || body.voiceId,
@@ -94,7 +103,7 @@ app.post('/api/tts', authMiddleware, async (req, res) => {
       pitch: body.pitch,
       languageBoost: body.language_boost || body.languageBoost,
       effects: body.effects
-    }, auth);
+    }, auth, fullCookie);
 
     res.type('audio/mpeg');
     res.send(result.audioData);
@@ -115,6 +124,7 @@ app.post('/api/tts/stream', authMiddleware, async (req, res) => {
   }
 
   try {
+    const fullCookie = (req as any).fullCookie;
     const stream = await ttsController.createSpeechStream({
       text: body.text,
       voiceId: body.voice_id || body.voiceId,
@@ -124,7 +134,7 @@ app.post('/api/tts/stream', authMiddleware, async (req, res) => {
       pitch: body.pitch,
       languageBoost: body.language_boost || body.languageBoost,
       effects: body.effects
-    }, auth);
+    }, auth, fullCookie);
 
     res.type('audio/mpeg');
     stream.pipe(res);
@@ -146,12 +156,13 @@ app.post('/api/tts/openai', authMiddleware, async (req, res) => {
   }
 
   try {
+    const fullCookie = (req as any).fullCookie;
     const result = await ttsController.createSpeech({
       text,
       voiceId: body.voice,
       speed: body.speed || 1,
       model: body.model === 'tts-1-hd' ? 'speech-2.6-hd' : 'speech-2.6-hd'
-    }, auth);
+    }, auth, fullCookie);
 
     res.type('audio/mpeg');
     res.send(result.audioData);

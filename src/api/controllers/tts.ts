@@ -32,14 +32,15 @@ export interface TTSResponse {
  */
 export async function createSpeech(
   request: TTSRequest,
-  auth: AuthInfo
+  auth: AuthInfo,
+  fullCookie?: string
 ): Promise<TTSResponse> {
   const deviceInfo = await core.acquireDeviceInfo(auth);
 
   // 构建WebSocket路径
   const wsPath = '/v1/api/audio/ws';
 
-  const ws = await core.createWebSocket(wsPath, auth, deviceInfo);
+  const ws = await core.createWebSocket(wsPath, auth, deviceInfo, fullCookie);
 
   return new Promise((resolve, reject) => {
     const audioChunks: Buffer[] = [];
@@ -168,12 +169,13 @@ export async function createSpeech(
  */
 export async function createSpeechStream(
   request: TTSRequest,
-  auth: AuthInfo
+  auth: AuthInfo,
+  fullCookie?: string
 ): Promise<PassThrough> {
   const deviceInfo = await core.acquireDeviceInfo(auth);
   const wsPath = '/v1/api/audio/ws';
 
-  const ws = await core.createWebSocket(wsPath, auth, deviceInfo);
+  const ws = await core.createWebSocket(wsPath, auth, deviceInfo, fullCookie);
   const stream = new PassThrough();
 
   // 构建TTS请求
