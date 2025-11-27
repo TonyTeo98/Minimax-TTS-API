@@ -72,28 +72,62 @@ npm install
 
 **重要提示**：本 API 需要 MiniMax 的认证信息才能正常工作。
 
-##### 方法一：从 localStorage 获取
+##### 推荐方法：一键获取认证信息
 
 1. 访问 https://www.minimax.io/audio 并登录你的账号
-2. 打开浏览器开发者工具 (F12) → Console 标签
-3. 在控制台中执行以下代码：
+2. 打开浏览器开发者工具 (F12) → **Console** 标签
+3. 在控制台中粘贴并执行以下代码：
 
 ```javascript
-const userDetail = localStorage.getItem("user_detail");
-const parsed = JSON.parse(userDetail);
-console.log("Token:", parsed.token);
-console.log("op_ticket:", parsed.op_ticket);
-console.log("\n完整认证头:");
-console.log(`Authorization: Bearer ${parsed.token}:${parsed.op_ticket}`);
+// 一键获取 MiniMax 认证信息
+(function() {
+  console.log("=== MiniMax 认证信息 ===\n");
+
+  // 从 localStorage 获取 op_ticket
+  const userDetail = localStorage.getItem("user_detail");
+  const parsed = userDetail ? JSON.parse(userDetail) : {};
+  const opTicket = parsed.op_ticket;
+
+  // 从 Cookie 获取 token (HERTZ-SESSION)
+  const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+    const [key, value] = cookie.trim().split('=');
+    acc[key] = value;
+    return acc;
+  }, {});
+  const token = cookies['HERTZ-SESSION'];
+
+  if (token && opTicket) {
+    console.log("✅ 认证信息获取成功！\n");
+    console.log("Token (HERTZ-SESSION):", token);
+    console.log("op_ticket:", opTicket);
+    console.log("\n📋 完整认证头（复制使用）:");
+    console.log(`Authorization: Bearer ${token}:${opTicket}`);
+  } else {
+    console.error("❌ 认证信息获取失败");
+    console.log("Token:", token ? "✅" : "❌ 未找到");
+    console.log("op_ticket:", opTicket ? "✅" : "❌ 未找到");
+    console.log("\n请确保：");
+    console.log("1. 已登录 MiniMax 账号");
+    console.log("2. 在 https://www.minimax.io/audio 页面执行此脚本");
+  }
+})();
 ```
 
-4. 复制输出的 `token` 和 `op_ticket` 值
+4. 复制输出的完整认证头
 
-##### 方法二：从 Cookie 获取 (备选)
+##### 手动获取方法 (备选)
 
+**Token (从 Cookie 获取)**：
 1. 在开发者工具中切换到 **Application** 标签（Chrome）或 **存储** 标签（Firefox）
 2. 在左侧 Cookies 中找到 `https://www.minimax.io`
-3. 查找名为 `HERTZ-SESSION` 或类似的 Cookie 值
+3. 复制名为 `HERTZ-SESSION` 的 Cookie 值
+
+**op_ticket (从 LocalStorage 获取)**：
+1. 在开发者工具的 **Console** 标签执行：
+```javascript
+JSON.parse(localStorage.getItem("user_detail")).op_ticket
+```
+2. 复制输出的值
 
 ##### 使用认证信息
 
@@ -152,8 +186,11 @@ curl -X POST http://localhost:8000/api/tts \
 
 **常见错误**：
 - `Authorization header required` - 未提供认证头
-- `Unexpected server response: 404` - 认证信息无效或已过期
-- `API Error: [xxx]` - MiniMax API 返回的错误
+- `Unexpected server response: 404` - 可能的原因：
+  - 认证信息已过期，需重新获取
+  - MiniMax API 端点已变更
+  - 账号没有对应功能的权限或额度已用完
+- `API Error: [xxx]` - MiniMax API 返回的具体错误信息
 
 ## API 文档
 
@@ -424,12 +461,39 @@ NODE_ENV=development
 - Korean
 - 等等...
 
+## 已知问题
+
+### TTS WebSocket 404 错误
+
+如果在使用 TTS 功能时遇到 `Unexpected server response: 404` 错误，可能是以下原因：
+
+1. **MiniMax API 端点可能已更新** - MiniMax 可能调整了 WebSocket API 路径
+2. **账号权限或额度限制** - 你的账号可能：
+   - 没有 TTS 功能权限
+   - ���费额度已用完
+   - 需要订阅付费计划
+3. **认证信息过期** - Cookie 有效期较短，需要定期重新获取
+
+**解决方案**：
+- 检查你的 MiniMax 账号是否可以在官网正常使用 TTS 功能
+- 重新获取最新的认证信息
+- 如果问题持续，可能需要等待项目更新适配最新的 API
+
+**替代方案**：
+- `/api/voices` - 音色列表功能正常
+- `/api/history` - 历史记录功能正常
+
 ## 注意事项
 
 1. 本项目仅供学习研究使用，请勿用于商业目的
 2. 请遵守 MiniMax 的服务条款
 3. 认证信息有时效性，过期需要重新获取
 4. 克隆音色功能需要账号有相应权限
+5. MiniMax 的 API 可能会不定期更新，导致部分功能失效
+
+## 贡献
+
+如果你发现了 API 端点的更新或修复方案，欢迎提交 Pull Request！
 
 ## License
 
