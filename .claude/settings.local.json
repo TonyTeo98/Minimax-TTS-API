@@ -2,7 +2,19 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: MiniMax TTS API\n\n- Add Express.js API server with TTS, voice, clone, and history endpoints\n- Add Docker support with multi-stage build\n- Add GitHub Actions workflow for automated Docker image builds\n- Support multi-platform builds (amd64/arm64)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: MiniMax TTS API\n\n- Add Express.js API server with TTS, voice, clone, and history endpoints\n- Add Docker support with multi-stage build\n- Add GitHub Actions workflow for automated Docker image builds\n- Support multi-platform builds (amd64/arm64)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(gh:*)",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git config:*)",
+      "Bash(git commit:*)",
+      "Bash(npm run build:*)",
+      "Bash(node dist/index.js:*)",
+      "Bash(PORT=8001 node dist/index.js:*)",
+      "Bash(curl:*)",
+      "Bash(PORT=8002 node:*)",
+      "Bash(PORT=8003 node:*)"
     ],
     "deny": [],
     "ask": []

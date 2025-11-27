@@ -37,7 +37,7 @@ export async function createSpeech(
   const deviceInfo = await core.acquireDeviceInfo(auth);
 
   // 构建WebSocket路径
-  const wsPath = '/v1/api/audio/stream';
+  const wsPath = '/v1/api/audio/ws';
 
   const ws = await core.createWebSocket(wsPath, auth, deviceInfo);
 
@@ -171,7 +171,7 @@ export async function createSpeechStream(
   auth: AuthInfo
 ): Promise<PassThrough> {
   const deviceInfo = await core.acquireDeviceInfo(auth);
-  const wsPath = '/v1/api/audio/stream';
+  const wsPath = '/v1/api/audio/ws';
 
   const ws = await core.createWebSocket(wsPath, auth, deviceInfo);
   const stream = new PassThrough();

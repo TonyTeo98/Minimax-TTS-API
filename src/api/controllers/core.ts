@@ -178,7 +178,8 @@ export function createWebSocket(
     const yy = util.generateYY(fullPath, '', time);
 
     // 构建WebSocket URL
-    const wsUrl = `${WS_BASE_URL}${fullPath}&yy=${encodeURIComponent(yy)}&token=${encodeURIComponent(auth.token)}&op_ticket=${encodeURIComponent(auth.opTicket)}`;
+    // 注意：token 应该通过 Cookie 传递，URL 中留空；op_ticket 作为 URL 参数
+    const wsUrl = `${WS_BASE_URL}${fullPath}&yy=${encodeURIComponent(yy)}&token=&op_ticket=${encodeURIComponent(auth.opTicket)}`;
 
     logger.info(`WebSocket Connecting to: ${wsUrl}`);
     logger.info(`Auth - Token: ${auth.token?.substring(0, 30)}...`);
@@ -188,7 +189,8 @@ export function createWebSocket(
       headers: {
         ...FAKE_HEADERS,
         'Origin': 'https://www.minimax.io',
-        'Sec-WebSocket-Version': '13'
+        'Sec-WebSocket-Version': '13',
+        'Cookie': `HERTZ-SESSION=${auth.token}`
       }
     });
 
