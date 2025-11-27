@@ -185,12 +185,33 @@ export function createWebSocket(
     logger.info(`Auth - Token: ${auth.token?.substring(0, 30)}...`);
     logger.info(`Auth - op_ticket: ${auth.opTicket}`);
 
+    // 构建完整的 Cookie 字符串
+    // 注意：实际使用时，用户可能需要提供完整的浏览器 Cookie（包括 Cloudflare cookies）
+    const cookies = [
+      `HERTZ-SESSION=${auth.token}`,
+      // 用户可以通过特殊格式传递额外的 cookies
+      // 格式: token 部分可以包含 |cf_clearance=xxx|__cf_bm=xxx
+    ];
+
+    // 如果 token 中包含额外的 cookies（用 | 分隔）
+    if (auth.token.includes('|')) {
+      const parts = auth.token.split('|');
+      const actualToken = parts[0];
+      cookies[0] = `HERTZ-SESSION=${actualToken}`;
+      // 添加额外的 cookies
+      for (let i = 1; i < parts.length; i++) {
+        if (parts[i].trim()) {
+          cookies.push(parts[i].trim());
+        }
+      }
+    }
+
     const ws = new WebSocket(wsUrl, {
       headers: {
         ...FAKE_HEADERS,
         'Origin': 'https://www.minimax.io',
         'Sec-WebSocket-Version': '13',
-        'Cookie': `HERTZ-SESSION=${auth.token}`
+        'Cookie': cookies.join('; ')
       }
     });
 
