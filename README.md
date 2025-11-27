@@ -11,15 +11,64 @@ MiniMax 语音合成 (TTS) 免费 API 服务，支持语音合成、音色选择
 - 🔊 **流式输出** - 支持流式音频传输
 - 🔧 **OpenAI兼容** - 兼容 OpenAI TTS API 格式
 
-## 快速开始
+## 部署方式
 
-### 1. 安装依赖
+### 方式一：Docker 部署（推荐）
+
+#### 使用预构建镜像
+
+从 GitHub Container Registry 拉取最新镜像：
+
+```bash
+docker pull ghcr.io/tonyteo98/minimax-tts-api:latest
+
+docker run -d \
+  --name minimax-tts-api \
+  -p 8000:8000 \
+  ghcr.io/tonyteo98/minimax-tts-api:latest
+```
+
+#### 使用 Docker Compose
+
+```bash
+# 克隆仓库
+git clone https://github.com/TonyTeo98/Minimax-TTS-API.git
+cd Minimax-TTS-API
+
+# 启动服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+```
+
+#### 从源码构建
+
+```bash
+# 构建镜像
+docker build -t minimax-tts-api .
+
+# 运行容器
+docker run -d \
+  --name minimax-tts-api \
+  -p 8000:8000 \
+  -e HOST=0.0.0.0 \
+  -e PORT=8000 \
+  minimax-tts-api
+```
+
+### 方式二：本地运行
+
+#### 1. 安装依赖
 
 ```bash
 npm install
 ```
 
-### 2. 获取认证信息
+#### 2. 获取认证信息
 
 1. 访问 https://www.minimax.io/audio 并登录
 2. 打开浏览器开发者工具 (F12) → Console
@@ -34,7 +83,7 @@ console.log("op_ticket:", parsed.op_ticket);
 
 4. 或者从Cookie中获取 `HERTZ-SESSION` 的值
 
-### 3. 启动服务
+#### 3. 启动服务
 
 ```bash
 # 开发模式
@@ -46,6 +95,16 @@ npm start
 ```
 
 服务默认运行在 `http://localhost:8000`
+
+## 健康检查
+
+访问健康检查端点验证服务是否正常运行：
+
+```bash
+curl http://localhost:8000/ping
+```
+
+正常返回：`pong`
 
 ## API 文档
 
@@ -242,15 +301,50 @@ curl -X POST http://localhost:8000/api/tts \
   --output output.mp3
 ```
 
-## 配置
+## 环境变量配置
 
-通过环境变量配置：
+### 服务器配置
 
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| HOST | 监听地址 | 0.0.0.0 |
-| PORT | 监听端口 | 8000 |
-| DEBUG | 调试模式 | false |
+| 变量 | 说明 | 默认值 | 示例 |
+|------|------|--------|------|
+| `HOST` | 监听地址 | `0.0.0.0` | `0.0.0.0` |
+| `PORT` | 监听端口 | `8000` | `8000` |
+| `NODE_ENV` | 运行环境 | - | `production` / `development` |
+
+### Docker 环境变量示例
+
+**使用 docker run：**
+
+```bash
+docker run -d \
+  --name minimax-tts-api \
+  -p 3000:3000 \
+  -e HOST=0.0.0.0 \
+  -e PORT=3000 \
+  -e NODE_ENV=production \
+  ghcr.io/tonyteo98/minimax-tts-api:latest
+```
+
+**使用 docker-compose：**
+
+修改 `docker-compose.yml` 中的 `environment` 部分：
+
+```yaml
+environment:
+  - NODE_ENV=production
+  - HOST=0.0.0.0
+  - PORT=8000
+```
+
+### 本地开发环境变量
+
+创建 `.env` 文件（可选）：
+
+```bash
+HOST=127.0.0.1
+PORT=8000
+NODE_ENV=development
+```
 
 ## 参数说明
 
