@@ -34,22 +34,30 @@ export interface AuthInfo {
 /**
  * 解析认证信息
  * token格式: token:op_ticket 或者只有token
+ * op_ticket 格式: timestamp:hash (包含冒号)
+ * 完整格式: Bearer token:timestamp:hash
  */
 export function parseAuth(authorization: string): AuthInfo {
-  const authStr = authorization.replace('Bearer ', '');
-  const parts = authStr.split(':');
+  const authStr = authorization.replace('Bearer ', '').trim();
 
-  if (parts.length >= 2) {
+  // 找到第一个冒号的位置
+  const firstColonIndex = authStr.indexOf(':');
+
+  if (firstColonIndex === -1) {
+    // 没有冒号，整个字符串作为 token
     return {
-      token: parts[0],
-      opTicket: parts[1]
+      token: authStr,
+      opTicket: ''
     };
   }
 
-  // 如果只提供一个值，假设它包含了完整的认证信息
+  // 第一个冒号之前是 token，之后是 op_ticket (可能包含冒号)
+  const token = authStr.substring(0, firstColonIndex);
+  const opTicket = authStr.substring(firstColonIndex + 1);
+
   return {
-    token: authStr,
-    opTicket: ''
+    token,
+    opTicket
   };
 }
 
@@ -172,7 +180,9 @@ export function createWebSocket(
     // 构建WebSocket URL
     const wsUrl = `${WS_BASE_URL}${fullPath}&yy=${encodeURIComponent(yy)}&token=${encodeURIComponent(auth.token)}&op_ticket=${encodeURIComponent(auth.opTicket)}`;
 
-    logger.debug(`WebSocket URL: ${wsUrl}`);
+    logger.info(`WebSocket Connecting to: ${wsUrl}`);
+    logger.info(`Auth - Token: ${auth.token?.substring(0, 30)}...`);
+    logger.info(`Auth - op_ticket: ${auth.opTicket}`);
 
     const ws = new WebSocket(wsUrl, {
       headers: {
