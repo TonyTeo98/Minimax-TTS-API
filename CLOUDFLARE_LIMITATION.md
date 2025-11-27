@@ -31,13 +31,25 @@
 
 ✅ **已修复的问题**：
 - WebSocket 路径：`/v1/api/audio/stream` → `/v1/api/audio/ws`
-- 认证解析：正确处理带冒号的 `op_ticket`
-- Cookie 传递：通过 Cookie header 而非 URL 参数
-- Cloudflare cookies 支持
+- 认证解析：正确处理带冒号的 `op_ticket` (格式：`timestamp:hash`)
+- Cookie 传递：通过 Cookie header 而非 URL 参数传递 token
+- Cloudflare cookies 支持：通过 `X-MiniMax-Cookie` header 传递完整浏览器 cookies
+- 完整的 cookie 字符串透传（包括 cf_clearance、__cf_bm 等）
+
+✅ **已验证的实现**：
+```bash
+# 使用 X-MiniMax-Cookie header 传递完整的浏览器 cookies
+curl -X POST http://localhost:8000/api/tts \
+  -H "Authorization: Bearer {token}:{op_ticket}" \
+  -H "X-MiniMax-Cookie: HERTZ-SESSION=xxx; cf_clearance=xxx; __cf_bm=xxx; ..." \
+  -H "Content-Type: application/json" \
+  -d '{"text": "测试", "voice_id": "279479307768027"}'
+```
 
 ❌ **无法绕过的限制**：
-- Cloudflare 浏览器指纹验证
-- Bot Manager 检测
+- **Cloudflare 浏览器指纹验证**：即使传递了正确的 Cloudflare cookies，Node.js `ws` 库的连接特征仍被识别为非浏览器流量
+- **Bot Manager 检测**：Cloudflare 检测到 WebSocket 连接不是来自真实浏览器（TLS 指纹、HTTP/2 指纹等）
+- **结果**：WebSocket 连接返回 400 错误
 
 ## 可能的解决方案
 

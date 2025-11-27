@@ -202,6 +202,19 @@ curl -X POST http://localhost:8000/api/tts \
 Authorization: Bearer {token}:{op_ticket}
 ```
 
+**可选：传递完整浏览器 Cookie**
+
+如果遇到 Cloudflare 验证问题，可以通过 `X-MiniMax-Cookie` header 传递完整的浏览器 cookies：
+
+```
+X-MiniMax-Cookie: HERTZ-SESSION=xxx; cf_clearance=xxx; __cf_bm=xxx; ...
+```
+
+获取方式：
+1. 在浏览器开发者工具的 **Network** 标签中找到任意请求
+2. 复制完整的 **Cookie** header 值
+3. 在 API 请求中添加 `X-MiniMax-Cookie` header
+
 ### TTS 语音合成
 
 #### POST /api/tts
@@ -387,6 +400,17 @@ curl -X POST http://localhost:8000/api/tts \
   --output output.mp3
 ```
 
+**使用完整浏览器 cookies：**
+
+```bash
+curl -X POST http://localhost:8000/api/tts \
+  -H "Authorization: Bearer YOUR_TOKEN:YOUR_OP_TICKET" \
+  -H "X-MiniMax-Cookie: HERTZ-SESSION=xxx; cf_clearance=xxx; __cf_bm=xxx; ..." \
+  -H "Content-Type: application/json" \
+  -d '{"text": "你好，这是一段测试语音。", "voice_id": "279479307768027"}' \
+  --output output.mp3
+```
+
 ## 环境变量配置
 
 ### 服务器配置
@@ -463,25 +487,32 @@ NODE_ENV=development
 
 ## 已知问题
 
-### TTS WebSocket 404 错误
+### TTS WebSocket Cloudflare 保护
 
-如果在使用 TTS 功能时遇到 `Unexpected server response: 404` 错误，可能是以下原因：
+TTS 功能目前受到 **Cloudflare 反爬虫保护**限制，即使提供了正确的认证信息和 Cloudflare cookies，Node.js WebSocket 连接仍会被识别为非浏览器流量并返回 400 错误。
 
-1. **MiniMax API 端点可能已更新** - MiniMax 可能调整了 WebSocket API 路径
-2. **账号权限或额度限制** - 你的账号可能：
-   - 没有 TTS 功能权限
-   - ���费额度已用完
-   - 需要订阅付费计划
-3. **认证信息过期** - Cookie 有效期较短，需要定期重新获取
+**问题原因**：
+- Cloudflare 检测 TLS 指纹、HTTP/2 指纹等浏览器特征
+- Node.js `ws` 库的连接特征与真实浏览器不同
+- 即使传递了 `cf_clearance`、`__cf_bm` 等 Cloudflare cookies 也会被拦截
 
-**解决方案**：
-- 检查你的 MiniMax 账号是否可以在官网正常使用 TTS 功能
-- 重新获取最新的认证信息
-- 如果问题持续，可能需要等待项目更新适配最新的 API
+**项目已实现**：
+- ✅ 正确的 WebSocket 连接逻辑（路径、认证、Cookie 传递）
+- ✅ 支持通过 `X-MiniMax-Cookie` header 传递完整浏览器 cookies
+- ✅ 完整的 API 服务器架构和 Docker 支持
+- ✅ 音色列表、历史记录等其他功能正常
 
-**替代方案**：
-- `/api/voices` - 音色列表功能正常
-- `/api/history` - 历史记录功能正常
+**可能的解决方案**：
+1. **使用浏览器自动化**（Puppeteer/Playwright）- 在真实浏览器环境中运行
+2. **浏览器扩展**- 通过浏览器扩展作为代理
+3. **等待官方 API**- MiniMax 提供官方 API Key 认证方式
+
+详细技术分析和解决方案请参考：[CLOUDFLARE_LIMITATION.md](./CLOUDFLARE_LIMITATION.md)
+
+**正常工作的功能**：
+- `/api/voices` - 音色列表功能 ✅
+- `/api/history` - 历史记录功能 ✅
+- `/api/clone` - 声音克隆功能 ✅
 
 ## 注意事项
 
